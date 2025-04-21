@@ -1,948 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Gyroscope Control Hub</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <script src="https://unpkg.com/paho-mqtt/mqttws31.min.js"></script>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background-color: #121212;
-      color: #ffffff;
-      padding: 20px;
-      max-width: 800px;
-      margin: 0 auto;
-      touch-action: none;
-      -webkit-tap-highlight-color: transparent;
-      overflow-x: hidden;
-    }
-    
-    h1, h2 {
-      text-align: center;
-      margin-bottom: 10px;
-      color: #03a9f4;
-    }
-    
-    .subtitle {
-      text-align: center;
-      color: #aaaaaa;
-      margin-bottom: 20px;
-      font-size: 14px;
-    }
-    
-    .card {
-      background-color: #1e1e1e;
-      border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-    }
-    
-    .status {
-      display: flex;
-      align-items: center;
-      margin-bottom: 15px;
-      padding: 10px;
-      border-radius: 8px;
-      justify-content: space-between;
-    }
-    
-    .status-connecting {
-      background-color: rgba(255, 152, 0, 0.2);
-      color: #ff9800;
-    }
-    
-    .status-connected {
-      background-color: rgba(76, 175, 80, 0.2);
-      color: #4caf50;
-    }
-    
-    .status-disconnected {
-      background-color: rgba(244, 67, 54, 0.2);
-      color: #f44336;
-    }
-    
-    .status-left {
-      display: flex;
-      align-items: center;
-    }
-    
-    .status-icon {
-      font-size: 24px;
-      margin-right: 10px;
-    }
-    
-    .status-text {
-      font-weight: 500;
-    }
-    
-    .input-group {
-      display: flex;
-      margin-bottom: 15px;
-    }
-    
-    input[type="text"], input[type="number"] {
-      flex: 1;
-      padding: 12px;
-      border: none;
-      border-radius: 8px 0 0 8px;
-      background-color: #333333;
-      color: white;
-      font-size: 16px;
-    }
-    
-    input:focus {
-      outline: none;
-      box-shadow: 0 0 0 2px rgba(3, 169, 244, 0.3);
-    }
-    
-    button.connect {
-      padding: 12px 20px;
-      border: none;
-      border-radius: 0 8px 8px 0;
-      background-color: #03a9f4;
-      color: white;
-      font-size: 16px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-    
-    button.connect:hover {
-      background-color: #0288d1;
-    }
-    
-    button.connect:disabled {
-      background-color: #777777;
-      cursor: not-allowed;
-    }
-    
-    button.action {
-      display: block;
-      width: 100%;
-      padding: 15px;
-      border: none;
-      border-radius: 8px;
-      background-color: #03a9f4;
-      color: white;
-      font-size: 16px;
-      font-weight: 500;
-      margin: 10px 0;
-      cursor: pointer;
-      transition: background-color 0.2s, transform 0.1s;
-    }
-    
-    button.action:hover {
-      background-color: #0288d1;
-    }
-    
-    button.action:active {
-      transform: translateY(2px);
-    }
-    
-    button.secondary {
-      background-color: #555555;
-    }
-    
-    button.secondary:hover {
-      background-color: #444444;
-    }
-    
-    button.warning {
-      background-color: #ff9800;
-    }
-    
-    button.warning:hover {
-      background-color: #e68900;
-    }
-    
-    .phone-container {
-      perspective: 800px;
-      width: 100%;
-      height: 200px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin: 30px 0;
-    }
-    
-    .phone-model {
-      width: 100px;
-      height: 180px;
-      background: linear-gradient(135deg, #333333 0%, #222222 100%);
-      border-radius: 15px;
-      position: relative;
-      transform-style: preserve-3d;
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
-      transition: transform 0.1s ease-out;
-    }
-    
-    .phone-screen {
-      width: 85px;
-      height: 160px;
-      background-color: #111111;
-      border-radius: 5px;
-      position: absolute;
-      top: 10px;
-      left: 7px;
-    }
-    
-    .reading-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 15px 0;
-      border-bottom: 1px solid #333333;
-    }
-    
-    .reading-row:last-child {
-      border-bottom: none;
-    }
-    
-    .reading-label {
-      font-size: 16px;
-      color: #aaaaaa;
-    }
-    
-    .reading-value {
-      font-size: 24px;
-      font-weight: bold;
-      font-family: monospace;
-    }
-    
-    .slider-container {
-      margin-bottom: 20px;
-    }
-    
-    .slider-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-    
-    .slider-label {
-      color: #aaaaaa;
-      font-size: 14px;
-    }
-    
-    .slider-value {
-      color: white;
-      font-weight: 500;
-    }
-    
-    .slider {
-      -webkit-appearance: none;
-      width: 100%;
-      height: 6px;
-      border-radius: 3px;
-      background: #333333;
-      outline: none;
-    }
-    
-    .slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: #03a9f4;
-      cursor: pointer;
-    }
-    
-    .slider::-moz-range-thumb {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: #03a9f4;
-      cursor: pointer;
-    }
-    
-    .toggle-container {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-    
-    .toggle-label {
-      color: #aaaaaa;
-      font-size: 14px;
-    }
-    
-    .toggle-switch {
-      position: relative;
-      display: inline-block;
-      width: 46px;
-      height: 24px;
-    }
-    
-    .toggle-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    
-    .toggle-slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #444444;
-      transition: .3s;
-      border-radius: 24px;
-    }
-    
-    .toggle-slider:before {
-      position: absolute;
-      content: "";
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: .3s;
-      border-radius: 50%;
-    }
-    
-    input:checked + .toggle-slider {
-      background-color: #03a9f4;
-    }
-    
-    input:checked + .toggle-slider:before {
-      transform: translateX(22px);
-    }
-    
-    .debug-panel {
-      margin-top: 20px;
-    }
-    
-    .debug-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px;
-      background-color: #333333;
-      border-radius: 8px 8px 0 0;
-      cursor: pointer;
-    }
-    
-    .debug-header h3 {
-      font-size: 14px;
-      font-weight: 500;
-      color: #aaaaaa;
-      margin: 0;
-    }
-    
-    .debug-content {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease-out;
-      background-color: #222222;
-      border-radius: 0 0 8px 8px;
-    }
-    
-    .debug-content.visible {
-      max-height: 200px;
-    }
-    
-    .debug-log {
-      padding: 10px;
-      font-family: monospace;
-      font-size: 12px;
-      color: #aaaaaa;
-      max-height: 150px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      word-break: break-all;
-    }
-    
-    .notification {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 12px 20px;
-      background-color: #333333;
-      color: white;
-      border-radius: 8px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-      z-index: 100;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.3s, visibility 0.3s;
-    }
-    
-    .notification.show {
-      opacity: 1;
-      visibility: visible;
-    }
-    
-    .notification.success {
-      background-color: #4caf50;
-    }
-    
-    .notification.error {
-      background-color: #f44336;
-    }
-    
-    .permission-modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.8);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.3s, visibility 0.3s;
-    }
-    
-    .permission-modal.visible {
-      opacity: 1;
-      visibility: visible;
-    }
-    
-    .modal-content {
-      max-width: 400px;
-      width: 80%;
-      background-color: #222222;
-      padding: 20px;
-      border-radius: 10px;
-      text-align: center;
-    }
-    
-    .modal-title {
-      font-size: 20px;
-      font-weight: 500;
-      margin-bottom: 10px;
-      color: white;
-    }
-    
-    .modal-text {
-      color: #aaaaaa;
-      margin-bottom: 20px;
-      font-size: 14px;
-    }
-    
-    .connection-quality {
-      display: flex;
-      align-items: center;
-    }
-    
-    .quality-bar {
-      width: 4px;
-      height: 10px;
-      background-color: #444;
-      margin-right: 2px;
-      border-radius: 1px;
-    }
-    
-    .quality-bar.active {
-      background-color: #4CAF50;
-    }
-    
-    .quality-bar:nth-child(1) {
-      height: 4px;
-    }
-    
-    .quality-bar:nth-child(2) {
-      height: 7px;
-    }
-    
-    .quality-bar:nth-child(3) {
-      height: 10px;
-    }
-    
-    .quality-bar:nth-child(4) {
-      height: 14px;
-    }
-    
-    .telemetry {
-      display: flex;
-      flex-wrap: wrap;
-      margin-top: 5px;
-    }
-    
-    .telemetry-item {
-      display: flex;
-      align-items: center;
-      margin-right: 15px;
-      margin-bottom: 5px;
-      font-size: 12px;
-      color: #aaa;
-    }
-    
-    .telemetry-icon {
-      margin-right: 5px;
-      font-size: 14px;
-    }
-    
-    /* Control pad for manual control */
-    .control-pad {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      grid-template-rows: 1fr 1fr 1fr;
-      gap: 10px;
-      margin: 20px 0;
-    }
-    
-    .pad-button {
-      padding: 20px 0;
-      background-color: #2c2c2c;
-      border: none;
-      border-radius: 5px;
-      color: white;
-      font-size: 20px;
-      touch-action: manipulation;
-    }
-    
-    .pad-button:active {
-      background-color: #03a9f4;
-    }
-    
-    .center-button {
-      background-color: #444;
-    }
-    
-    /* Offline message */
-    .offline-message {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: rgba(0,0,0,0.8);
-      padding: 20px;
-      border-radius: 10px;
-      text-align: center;
-      display: none;
-      color: white;
-      max-width: 300px;
-      z-index: 50;
-    }
-    
-    .offline-details {
-      margin: 10px 0;
-      font-size: 14px;
-      color: #aaa;
-    }
-    
-    .btn-small {
-      background-color: #03a9f4;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-    
-    /* Data transmission indicator */
-    .transmission-indicator {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background-color: #444;
-      display: inline-block;
-      margin-left: 10px;
-      vertical-align: middle;
-    }
-    
-    .transmission-active {
-      background-color: #4caf50;
-      box-shadow: 0 0 5px #4caf50;
-      animation: pulse 1s infinite;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gyroscope Servo Control Hub</title>
+    <script src="https://unpkg.com/paho-mqtt/mqttws31.min.js"></script>
+    <style>
+        body {
+            background-color: #121212;
+            color: white;
+        }
 
-    /* New style for connection method tabs */
-    .connection-tabs {
-      display: flex;
-      margin-bottom: 20px;
-    }
-
-    .connection-tab {
-      flex: 1;
-      padding: 12px;
-      text-align: center;
-      background-color: #2c2c2c;
-      cursor: pointer;
-      font-weight: 500;
-    }
-
-    .connection-tab:first-child {
-      border-radius: 8px 0 0 8px;
-    }
-
-    .connection-tab:last-child {
-      border-radius: 0 8px 8px 0;
-    }
-
-    .connection-tab.active {
-      background-color: #03a9f4;
-      color: white;
-    }
-
-    /* MQTT specific styles */
-    .mqtt-status {
-      margin: 5px 0 10px;
-      font-size: 14px;
-      color: #aaa;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .mqtt-status-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      margin-right: 8px;
-    }
-
-    .mqtt-connected {
-      background-color: #4caf50;
-    }
-
-    .mqtt-disconnected {
-      background-color: #f44336;
-    }
-
-    .mqtt-connecting {
-      background-color: #ff9800;
-      animation: blink 1s infinite;
-    }
-    
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.5; }
-      100% { opacity: 1; }
-    }
-
-    @keyframes blink {
-      0% { opacity: 1; }
-      50% { opacity: 0.4; }
-      100% { opacity: 1; }
-    }
-  </style>
+        h1 {
+            text-align: center;
+            color: #03a9f4;
+        }
+    </style>
 </head>
 
 <body>
-  <h1>Gyroscope Servo Control Hub</h1>
-  <div class="subtitle">Control servos with your phone's motion via WebSocket or MQTT</div>
-  
-  <!-- Connection Method Tabs -->
-  <div class="connection-tabs">
-    <div id="wsTab" class="connection-tab active">Direct WebSocket</div>
-    <div id="mqttTab" class="connection-tab">MQTT Broker</div>
-  </div>
-
-  <!-- WebSocket Connection Card -->
-  <div class="card" id="wsConnectionCard">
-    <div id="status" class="status status-disconnected">
-      <div class="status-left">
-        <div class="status-icon">🔴</div>
-        <div class="status-text">Disconnected</div>
-        <div id="tx-indicator" class="transmission-indicator"></div>
-      </div>
-      
-      <div class="connection-quality" id="connectionQuality">
-        <div class="quality-bar"></div>
-        <div class="quality-bar"></div>
-        <div class="quality-bar"></div>
-        <div class="quality-bar"></div>
-      </div>
+    <h1>Gyroscope Servo Control Hub</h1>
+    <div id="mqttConnectionCard">
+        <input type="text" id="mqttBrokerInput" value="6d1fc1e754794c5c9bd52f84a4e10881.s1.eu.hivemq.cloud"
+            placeholder="MQTT Broker"><br>
+        <input type="text" id="mqttTopicInput" value="gyro/data" placeholder="MQTT Topic"><br>
+        <button id="mqttConnectBtn">Connect MQTT</button>
     </div>
-    
-    <div class="telemetry">
-      <div class="telemetry-item">
-        <i class="fas fa-wifi telemetry-icon"></i>
-        <span id="signalValue">--</span>
-      </div>
-      <div class="telemetry-item">
-        <i class="fas fa-exchange-alt telemetry-icon"></i>
-        <span id="txCounter">0</span> packets sent
-      </div>
-      <div class="telemetry-item">
-        <i class="fas fa-clock telemetry-icon"></i>
-        <span id="latencyValue">--</span>
-      </div>
-    </div>
-    
-    <div class="input-group">
-      <input type="text" id="ipInput" value="192.168.4.1" placeholder="ESP32 IP Address">
-      <button id="connectBtn" class="connect">Connect</button>
-    </div>
-  </div>
-  
-  <!-- MQTT Connection Card -->
-  <div class="card" id="mqttConnectionCard" style="display: none;">
-    <div class="mqtt-status">
-      <div id="mqttStatusDot" class="mqtt-status-dot mqtt-disconnected"></div>
-      <div id="mqttStatusText">MQTT Disconnected</div>
+    <div id="gyroCard">
+        Yaw: <span id="yawValue">0</span>°<br>
+        Pitch: <span id="pitchValue">0</span>°<br>
+        Roll: <span id="rollValue">0</span>°
     </div>
 
-    <div class="input-group">
-      <input type="text" id="mqttBrokerInput" value="6d1fc1e754794c5c9bd52f84a4e10881.s1.eu.hivemq.cloud" placeholder="MQTT Broker">
-      <button id="mqttConnectBtn" class="connect">Connect</button>
-    </div>
+    <script>
+        // Settings
+        const settings = {
+            mqttBroker: localStorage.getItem('gyro_mqtt_broker') ||
+                '6d1fc1e754794c5c9bd52f84a4e10881.s1.eu.hivemq.cloud',
+            mqttPort: parseInt(localStorage.getItem('gyro_mqtt_port') || '8883'),
+            mqttTopic: localStorage.getItem('gyro_mqtt_topic') || 'gyro/data',
+            hivemqUsername: localStorage.getItem('gyro_hivemq_username') ||
+                'Bharat27', // Replace with your username
+            hivemqPassword: localStorage.getItem('gyro_hivemq_password') ||
+                'Bharat@27' // Replace with your password
+        };
 
-    <div class="input-group">
-      <input type="text" id="mqttTopicInput" value="gyro/data" placeholder="MQTT Topic">
-    </div>
+        // MQTT variables
+        let mqttClient = null;
+        let mqttConnected = false;
 
-    <div class="toggle-container">
-      <div class="toggle-label">Send to API Endpoint</div>
-      <label class="toggle-switch">
-        <input type="checkbox" id="apiToggle">
-        <span class="toggle-slider"></span>
-      </label>
-    </div>
-    
-    <div id="apiEndpointContainer" style="display: none;">
-      <div class="input-group">
-        <input type="text" id="apiEndpointInput" value="/api/gyro" placeholder="API Endpoint URL">
-      </div>
-    </div>
+        // Gyro variables
+        let yaw = 0,
+            pitch = 0,
+            roll = 0;
 
-    <div class="telemetry">
-      <div class="telemetry-item">
-        <i class="fas fa-paper-plane telemetry-icon"></i>
-        <span id="mqttCounter">0</span> MQTT messages sent
-      </div>
-    </div>
-  </div>
-  
-  <!-- Gyroscope Card -->
-  <div class="card" id="gyroCard">
-    <div class="phone-container">
-      <div id="phoneModel" class="phone-model">
-        <div class="phone-screen"></div>
-      </div>
-    </div>
-    
-    <div class="reading-row">
-      <div class="reading-label">Pan (Yaw)</div>
-      <div class="reading-value"><span id="yawValue">0</span>°</div>
-    </div>
-    
-    <div class="reading-row">
-      <div class="reading-label">Tilt (Pitch)</div>
-      <div class="reading-value"><span id="pitchValue">0</span>°</div>
-    </div>
-    
-    <div class="reading-row">
-      <div class="reading-label">Roll</div>
-      <div class="reading-value"><span id="rollValue">0</span>°</div>
-    </div>
-    
-    <button id="calibrateBtn" class="action">Calibrate Position</button>
-    <button id="resetBtn" class="action secondary">Reset Position</button>
-    <button id="forceEnableSensors" class="action warning">Force Enable Sensors</button>
-    <button id="toggleManualBtn" class="action secondary">Switch to Manual Control</button>
-  </div>
-  
-  <!-- Manual Control (hidden by default) -->
-  <div class="card" id="manualControlCard" style="display: none;">
-    <h2>Manual Control</h2>
-    <div class="control-pad">
-      <button class="pad-button" id="upLeftBtn">↖</button>
-      <button class="pad-button" id="upBtn">↑</button>
-      <button class="pad-button" id="upRightBtn">↗</button>
-      <button class="pad-button" id="leftBtn">←</button>
-      <button class="pad-button center-button" id="centerBtn">⊙</button>
-      <button class="pad-button" id="rightBtn">→</button>
-      <button class="pad-button" id="downLeftBtn">↙</button>
-      <button class="pad-button" id="downBtn">↓</button>
-      <button class="pad-button" id="downRightBtn">↘</button>
-    </div>
-    <button id="toggleGyroBtn" class="action">Switch to Gyro Control</button>
-  </div>
-  
-  <!-- Settings Card -->
-  <div class="card">
-    <h2>Settings</h2>
-    
-    <div class="slider-container">
-      <div class="slider-header">
-        <div class="slider-label">Sensitivity</div>
-        <div id="sensitivityValue" class="slider-value">50%</div>
-      </div>
-      <input type="range" id="sensitivitySlider" class="slider" min="10" max="100" value="50">
-    </div>
-    
-    <div class="slider-container">
-      <div class="slider-header">
-        <div class="slider-label">Smoothing</div>
-        <div id="smoothingValue" class="slider-value">50%</div>
-      </div>
-      <input type="range" id="smoothingSlider" class="slider" min="0" max="90" value="50">
-    </div>
-    
-    <div class="toggle-container">
-      <div class="toggle-label">Invert Pan (Left/Right)</div>
-      <label class="toggle-switch">
-        <input type="checkbox" id="invertYawToggle">
-        <span class="toggle-slider"></span>
-      </label>
-    </div>
-    
-    <div class="toggle-container">
-      <div class="toggle-label">Invert Tilt (Up/Down)</div>
-      <label class="toggle-switch">
-        <input type="checkbox" id="invertPitchToggle">
-        <span class="toggle-slider"></span>
-      </label>
-    </div>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('mqttBrokerInput').value = settings.mqttBroker;
+            document.getElementById('mqttTopicInput').value = settings.mqttTopic;
+            document.getElementById('mqttConnectBtn').addEventListener('click', connectMqtt);
+            requestOrientationPermission();
+        });
 
-    <div class="toggle-container">
-      <div class="toggle-label">Data Transmission Rate</div>
-      <div class="slider-header">
-        <div id="updateRateValue" class="slider-value">20 Hz</div>
-      </div>
-    </div>
-    <input type="range" id="updateRateSlider" class="slider" min="1" max="60" value="20">
-  </div>
-  
-  <!-- Debug Panel -->
-  <div class="debug-panel">
-    <div id="debugHeader" class="debug-header">
-      <h3>Debug Information</h3>
-      <span id="debugArrow">▼</span>
-    </div>
-    <div id="debugContent" class="debug-content visible">
-      <div id="debugLog" class="debug-log"></div>
-    </div>
-  </div>
-  
-  <!-- Notification -->
-  <div id="notification" class="notification"></div>
-  
-  <!-- Permission Modal -->
-  <div id="permissionModal" class="permission-modal">
-    <div class="modal-content">
-      <div class="modal-title">Motion Sensor Access</div>
-      <div class="modal-text">
-        This app needs access to your device's motion sensors to control the servos.
-        Please tap the button below and allow when prompted.
-      </div>
-      <button id="permissionBtn" class="action">Enable Motion Sensors</button>
-    </div>
-  </div>
-  
-  <!-- Offline message -->
-  <div class="offline-message" id="offlineMessage">
-    <i class="fas fa-exclamation-triangle"></i> CONNECTION LOST<br>
-    <div class="offline-details">
-      Unable to connect to ESP32.<br>
-      Check if ESP32 is powered on and on the same network.
-    </div>
-    <button class="btn-small" onclick="retryConnection()">Retry Connection</button>
-  </div>
+        function connectMqtt() {
+            const broker = document.getElementById('mqttBrokerInput').value.trim();
+            const topic = document.getElementById('mqttTopicInput').value.trim();
+            settings.mqttBroker = broker;
+            settings.mqttTopic = topic;
+            localStorage.setItem('gyro_mqtt_broker', broker);
+            localStorage.setItem('gyro_mqtt_topic', topic);
 
-  <script>
-    // Global Variables
-    let socket = null;
-    let isConnected = false;
-    let gyroEnabled = false;
-    let lastSendTime = 0;
-    let wakeLock = null;
-    let sensorInterval = null;
-    let manualMode = false;
-    let connectionAttempts = 0;
-    let maxConnectionAttempts = 5;
-    let lastPing = Date.now();
-    let panPos = 90;
-    let tiltPos = 90;
-    let packetsSent = 0;
-    let mqttMessagesSent = 0;
-    let connectionMethod = 'websocket'; // 'websocket' or 'mqtt'
-    let updateRate = 20; // Hz (times per second)
-    
-    // MQTT Client
-    let mqttClient = null;
-    let mqttConnected = false;
-    let sendToApi = false;
-    
-    // Define gyroscope variables
-    let yaw = 0;
-    let pitch = 0;
-    let roll = 0;
-    
-    // Settings with localStorage persistence
-    const settings = {
-      ip: localStorage.getItem('gyro_ip') || '192.168.4.1',
-      port: localStorage.getItem('gyro_port') || '81',
-      mqttBroker: localStorage.getItem('gyro_mqtt_broker') || '6d1fc1e754794c5c9bd52f84a4e10881.s1.eu.hivemq.cloud',
-      mqttPort: parseInt(localStorage.getItem('gyro_mqtt_port') || '8883'),
-      mqttTopic: localStorage.getItem('gyro_mqtt_topic') || 'gyro/data',
-      apiEndpoint: localStorage.getItem('gyro_api_endpoint') || '/api/gyro',
-      useApi: localStorage.getItem('gyro_use_api') === 'true',
-      sensitivity: parseInt(localStorage.getItem('gyro_sensitivity') || '50'),
-      smoothing: parseInt(localStorage.getItem('gyro_smoothing') || '30'),
-      invertYaw: localStorage.getItem('gyro_invertYaw') === 'true',
-      invertPitch: localStorage.getItem('gyro_invertPitch') === 'true',
-      updateRate: parseInt(localStorage.getItem('gyro_update_rate') || '20'),
-      hivemqUsername: localStorage.getItem('gyro_hivemq_username') || 'your_hivemq_username',  // Add username
-      hivemqPassword: localStorage.getItem('gyro_hivemq_password') || 'your_hivemq_password',  // Add password
-      calibration: {
-        alpha: 0,
-        beta: 0,
-        gamma: 0
-      }
-    };
-    
-    // Initialize when the page loads
-    document.addEventListener('DOMContentLoaded', () => {
-      // Initialize UI with saved settings
-      document.getElementById('ipInput').value = settings.ip;
-      document.getElementById('mqttBrokerInput').value = settings.mqttBroker;
-      document.getElementById('mqttTopicInput').value = settings.mqttTopic;
-      document.getElementById('apiEndpointInput').value = settings.apiEndpoint;
-      document.getElementById('apiToggle').checked = settings.useApi;
-      document.getElementById('sensitivitySlider').value = settings.sensitivity;
-      document.getElementById('sensitivityValue').textContent = `${settings.sensitivity}%`;
-      document.getElementById('smoothingSlider').value = settings.smoothing;
-      document.getElementById('smoothingValue').textContent = `${settings.smoothing}%`;
-      document.getElementById('invertYawToggle').checked = settings.invertYaw;
-      document.getElementById('invertPitchToggle').checked = settings.invertPitch;
-      document.getElementById('updateRateSlider').value = settings.updateRate;
-      document.getElementById('updateRateValue').textContent = `${settings.updateRate} Hz`;
-      updateRate = settings.updateRate;
+            mqttClient = new Paho.MQTT.Client(broker, settings.mqttPort,
+                "gyrocontrol_" + Math.random().toString(16).slice(2, 10));
+            mqttClient.onConnectionLost = onMqttConnectionLost;
+            mqttClient.onMessageArrived = onMqttMessageArrived;
 
-      // Show/hide API endpoint input based on toggle
-      if (settings.useApi) {
-        document.getElementById('apiEndpointContainer').style.display = 'block';
-      }
-      
-      // Set up event listeners
-      setupEventListeners();
-      
-      // Log basic information
-      logDebug('App initialized - ' + navigator.userAgent);
-      logDebug('Gyro Control Hub v1.0 - Multi-Protocol Version');
-      
-      // Show debug panel by default for troubleshooting
-      document.getElementById('debugContent').classList.add('visible');
-      document.getElementById('debugArrow').textContent = '▲';
-      
-      // Check if device orientation events are available
-      if (window.DeviceOrientationEvent) {
-        logDebug("Device orientation events are supported");
-        requestOrientationPermission();
-      } else {
-        logDebug('ERROR: Device orientation events not available on this device');
-        showNotification('Your device does not support orientation sensors', 'error');
-        
+            mqttClient.connect({
+                userName: settings.hivemqUsername,
+                password: settings.hivemqPassword,
+                useSSL: true,
+                onSuccess: () => {
+                    mqttConnected = true;
+                    mqttClient.subscribe(topic);
+                    console.log('MQTT Connected');
+                },
+                onFailure: (error) => {
+                    console.error("MQTT Fail: " + error.errorMessage);
+                }
+            });
+        }
+
+        function onMqttConnectionLost(responseObject) {
+            console.error("MQTT Connection Lost: " + responseObject.errorMessage);
+        }
+
+        function onMqttMessageArrived(message) {
+            console.log("MQTT Message:", message.payloadString);
+        }
+
+        function sendMqttMessage(data) {
+            if (mqttClient && mqttConnected) {
+                const message = new Paho.MQTT.Message(JSON.stringify(data));
+                message.destinationName = settings.mqttTopic;
+                mqttClient.send(message);
+            } else {
+                console.warn("MQTT not connected, cannot send");
+            }
+        }
+
+        function requestOrientationPermission() {
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === "granted") {
+                            window.addEventListener("deviceorientation", updateOrientation);
+                        } else {
+                            console.warn("Gyro permission denied");
+                        }
+                    })
+                    .catch(console.error);
+            } else {
+                window.addEventListener("deviceorientation", updateOrientation);
+            }
+        }
+
+        function updateOrientation(event) {
+            yaw = event.alpha || 0;
+            pitch = event.beta || 0;
+            roll = event.gamma || 0;
+            document.getElementById('yawValue').textContent = Math.round(yaw);
+            document.getElementById('pitchValue').textContent = Math.round(pitch);
+            document.getElementById('rollValue').textContent = Math.round(roll);
+
+            sendMqttData();
+        }
+
+        function sendMqttData() {
+            const data = {
+                yaw: Math.round(yaw),
+                pitch: Math.round(pitch),
+                roll: Math.round(roll)
+            };
+            sendMqttMessage(data);
+        }
+    </script>
+</body>
+
+</html>
